@@ -95,7 +95,7 @@
   }
 }
 
-.contact-info, .ai-bot-container {
+.contact-info, .help-chat-container {
   background: var(--bg-secondary);
   padding: 30px;
   border-radius: var(--border-radius);
@@ -123,7 +123,7 @@
   font-size: 0.95rem;
 }
 
-/* AI Bot Chat */
+/* Help chat */
 .chat-window {
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius);
@@ -262,7 +262,13 @@
 .timeline-item.active .timeline-icon {
   background: var(--primary-color);
   border-color: var(--primary-color);
-  color: white;
+  color: var(--text-inverse);
+}
+
+.timeline-item.cancelled.active .timeline-icon {
+  background: var(--error-color);
+  border-color: var(--error-color);
+  color: #fff;
 }
 
 .timeline-content h4 {
@@ -273,5 +279,30 @@
 .timeline-content p {
   margin: 0;
   font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.track-hint {
+  margin-top: 15px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.track-summary {
+  background: var(--bg-secondary);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 30px;
+  border: 1px solid var(--border-light);
+}
+
+.track-summary h3 {
+  margin: 0 0 8px;
+  font-family: 'Geist Mono', ui-monospace, monospace;
+}
+
+.track-summary p {
+  margin: 0;
   color: var(--text-secondary);
 }

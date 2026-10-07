@@ -74,7 +74,7 @@
 }
 
 .action-btn:hover {
-  color: #FFD700;
+  color: var(--success-color);
 }
 
 .header-bottom {
@@ -126,7 +126,7 @@
 }
 
 .mobile-menu-btn:hover {
-  color: #FFD700;
+  color: var(--success-color);
 }
 
 /* Mobile Responsive Adjustments */
@@ -250,4 +250,36 @@
 .theme-toggle.dark .toggle-thumb {
   transform: translateX(16px);
   background-color: var(--text-primary);
+}
+
+/* Account and bag */
+.account-name {
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.cart-link {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 100px;
+  background: #ff3f6c;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.mobile-dropdown-greeting {
+  font-weight: 600;
+  color: var(--text-primary);
 }

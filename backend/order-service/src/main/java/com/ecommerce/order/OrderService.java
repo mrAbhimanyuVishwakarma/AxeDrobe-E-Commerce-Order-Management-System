@@ -1,78 +1,169 @@
 package com.ecommerce.order;
 
-import com.ecommerce.order.dto.OrderRequestDto;
-import com.ecommerce.order.dto.ProductDto;
-import com.ecommerce.order.dto.UserDto;
-import com.ecommerce.order.event.OrderCreatedEvent;
+import com.ecommerce.client.ProductClient;
+import com.ecommerce.client.ProductSnapshot;
+import com.ecommerce.event.OrderEventPublisher;
+import com.ecommerce.order.dto.OrderLineRequest;
+import com.ecommerce.order.dto.PlaceOrderRequest;
+import com.ecommerce.security.AuthUser;
 import lombok.RequiredArgsConstructor;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-/**
- * OrderService
- * Explaining design decision: In Phase 4, OrderService uses RestTemplate to communicate with
- * other microservices (user-service, product-service) to validate the order, and Kafka for async events.
- */
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
+    static final BigDecimal FREE_SHIPPING_FROM = BigDecimal.valueOf(999);
+    static final BigDecimal SHIPPING_FEE = BigDecimal.valueOf(79);
+
+    private static final Set<OrderStatus> CANCELLABLE = Set.of(OrderStatus.CONFIRMED);
+    private static final DateTimeFormatter NUMBER_DATE = DateTimeFormatter.ofPattern("yyMMdd").withZone(ZoneId.of("Asia/Kolkata"));
+    private static final String NUMBER_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final OrderRepository orderRepository;
-    private final RestTemplate restTemplate;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ProductClient productClient;
+    private final OrderEventPublisher events;
 
-    private static final String ORDER_TOPIC = "order-created";
-    
-    @org.springframework.beans.factory.annotation.Value("${product.service.url:http://localhost:8082/api/products/}")
-    private String productServiceUrl;
-    
-    // Assuming auth is handled gracefully or bypassed for internal calls in this demo
-    // We would ideally pass the JWT token in headers for internal calls.
-
-    @Transactional
-    public Order createOrder(OrderRequestDto requestDto) {
-        // 1. Fetch Product
-        ProductDto product = restTemplate.getForObject(productServiceUrl + requestDto.getProductId(), ProductDto.class);
-        if (product == null) {
-            throw new RuntimeException("Product not found");
+    public Order placeOrder(AuthUser customer, PlaceOrderRequest request) {
+        // Same product and size added twice becomes one line
+        Map<String, OrderLineRequest> lines = new LinkedHashMap<>();
+        for (OrderLineRequest line : request.items()) {
+            String key = line.productId() + "|" + (line.size() == null ? "" : line.size());
+            lines.merge(key, line, (a, b) -> new OrderLineRequest(a.productId(), a.size(), a.quantity() + b.quantity()));
         }
 
-        // 2. Mock User info for now since we don't have token propagation setup
-        // In a real microservices scenario with JWT, we decode it from SecurityContext.
-        Long userId = requestDto.getUserId();
-        String userEmail = "customer@example.com"; // Mocked for simplicity in this step
+        Map<String, ProductSnapshot> products = new LinkedHashMap<>();
+        Map<String, Integer> requestedPerProduct = new LinkedHashMap<>();
+        for (OrderLineRequest line : lines.values()) {
+            products.computeIfAbsent(line.productId(), productClient::get);
+            requestedPerProduct.merge(line.productId(), line.quantity(), Integer::sum);
+        }
 
-        // 3. Calculate amount and save order
-        Double totalAmount = product.getPrice() * requestDto.getQuantity();
+        requestedPerProduct.forEach((productId, quantity) -> {
+            ProductSnapshot product = products.get(productId);
+            if (product.stock() < quantity) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, product.stock() == 0
+                        ? product.name() + " just went out of stock."
+                        : "Only " + product.stock() + " left of " + product.name() + ". Please reduce the quantity.");
+            }
+        });
+
+        List<OrderItem> items = new ArrayList<>();
+        for (OrderLineRequest line : lines.values()) {
+            ProductSnapshot product = products.get(line.productId());
+            String size = resolveSize(product, line.size());
+            BigDecimal lineTotal = product.price().multiply(BigDecimal.valueOf(line.quantity()));
+            items.add(new OrderItem(product.id(), product.name(), product.brand(), product.imageUrl(),
+                    size, line.quantity(), product.price(), lineTotal));
+        }
+
+        BigDecimal subtotal = items.stream().map(OrderItem::lineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal shipping = shippingFor(subtotal);
+
         Order order = new Order();
-        order.setUserId(userId);
-        order.setTotalAmount(totalAmount);
-        order.setStatus("COMPLETED");
-        Order savedOrder = orderRepository.save(order);
+        order.setOrderNumber(newOrderNumber());
+        order.setUserId(customer.id());
+        order.setCustomerName(customer.name());
+        order.setCustomerEmail(customer.email());
+        order.setItems(items);
+        order.setShippingAddress(request.shippingAddress());
+        order.setPaymentMethod("CASH_ON_DELIVERY");
+        order.setSubtotal(subtotal);
+        order.setShippingFee(shipping);
+        order.setTotal(subtotal.add(shipping));
+        order.setCreatedAt(Instant.now());
+        order.moveTo(OrderStatus.CONFIRMED);
 
-        // 4. Publish Event to Kafka
-        OrderCreatedEvent event = new OrderCreatedEvent(
-                savedOrder.getId(),
-                userId,
-                product.getId(),
-                requestDto.getQuantity(),
-                userEmail
-        );
-        kafkaTemplate.send(ORDER_TOPIC, String.valueOf(savedOrder.getId()), event);
-        System.out.println("Published order-created event for Order ID " + savedOrder.getId());
-
-        return savedOrder;
+        Order saved = orderRepository.save(order);
+        events.orderPlaced(saved);
+        return saved;
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public List<Order> ordersFor(AuthUser customer) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(customer.id());
     }
 
-    public Order getOrderById(Long id) {
-        return orderRepository.findById(id).orElse(null);
+    public List<Order> latestOrders(int limit) {
+        return orderRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, Math.min(limit, 200)));
+    }
+
+    /** Looks up by order number (AXD...) or database id. Customers only see their own orders. */
+    public Order find(AuthUser caller, String reference) {
+        String ref = reference.trim();
+        Order order = (ref.toUpperCase().startsWith("AXD")
+                ? orderRepository.findByOrderNumber(ref.toUpperCase())
+                : orderRepository.findById(ref))
+                .filter(o -> caller.isAdmin() || o.getUserId().equals(caller.id()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        return order;
+    }
+
+    public Order cancel(AuthUser caller, String reference) {
+        Order order = find(caller, reference);
+        if (!CANCELLABLE.contains(order.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, order.getStatus() == OrderStatus.CANCELLED
+                    ? "This order is already cancelled."
+                    : "This order has already shipped and can no longer be cancelled.");
+        }
+        order.moveTo(OrderStatus.CANCELLED);
+        Order saved = orderRepository.save(order);
+        events.orderCancelled(saved);
+        return saved;
+    }
+
+    /** Admin only: move an order along the delivery steps. */
+    public Order updateStatus(AuthUser admin, String reference, OrderStatus next) {
+        Order order = find(admin, reference);
+        if (order.getStatus() == OrderStatus.CANCELLED || order.getStatus() == OrderStatus.DELIVERED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This order is closed.");
+        }
+        if (next == OrderStatus.CANCELLED) {
+            return cancel(admin, reference);
+        }
+        if (next.ordinal() <= order.getStatus().ordinal()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Order is already " + order.getStatus().name().toLowerCase().replace('_', ' '));
+        }
+        order.moveTo(next);
+        return orderRepository.save(order);
+    }
+
+    static BigDecimal shippingFor(BigDecimal subtotal) {
+        return subtotal.compareTo(FREE_SHIPPING_FROM) >= 0 ? BigDecimal.ZERO : SHIPPING_FEE;
+    }
+
+    private static String resolveSize(ProductSnapshot product, String size) {
+        List<String> sizes = product.sizes() == null ? List.of() : product.sizes();
+        if (sizes.isEmpty()) {
+            return null;
+        }
+        if (!StringUtils.hasText(size) || !sizes.contains(size)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please choose a size for " + product.name());
+        }
+        return size;
+    }
+
+    static String newOrderNumber() {
+        StringBuilder suffix = new StringBuilder();
+        for (int i = 0; i < 5; i++) {
+            suffix.append(NUMBER_CHARS.charAt(RANDOM.nextInt(NUMBER_CHARS.length())));
+        }
+        return "AXD" + NUMBER_DATE.format(Instant.now()) + "-" + suffix;
     }
 }

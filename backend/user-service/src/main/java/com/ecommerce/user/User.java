@@ -1,47 +1,43 @@
 package com.ecommerce.user;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-/**
- * User Entity
- * Explaining design decision: We use JPA annotations to map this class to the 'users' table.
- * Lombok's @Data is used to generate getters, setters, equals, hashCode, and toString methods automatically, reducing boilerplate code.
- */
-@Entity
-@Table(name = "users")
+import java.time.Instant;
+
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+@Document("users")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    // An account can be created with email, mobile or Google, so each of these is optional.
+    // Sparse unique indexes keep them unique while allowing documents without the field.
+    @Indexed(unique = true, sparse = true)
     private String email;
 
-    @Column(nullable = true, unique = true)
+    @Indexed(unique = true, sparse = true)
     private String mobileNumber;
 
-    @Column(nullable = false)
-    private String password;
+    @Indexed(unique = true, sparse = true)
+    private String googleId;
 
-    @Column(nullable = false)
-    private String role; // "ADMIN" or "CUSTOMER"
+    private String passwordHash;
 
-    @Column(nullable = true)
-    private String otpCode;
+    private Role role = Role.CUSTOMER;
 
-    @Column(nullable = true)
-    private java.time.LocalDateTime otpExpiry;
+    private Instant createdAt;
 
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    private boolean isVerified;
+    private Instant lastLoginAt;
+
+    public boolean hasPassword() {
+        return passwordHash != null && !passwordHash.isBlank();
+    }
 }

@@ -11,12 +11,12 @@
 
 .faq-header h2 {
   font-size: 2.2rem;
-  color: #222;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .faq-header p {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1.1rem;
 }
 
@@ -27,49 +27,54 @@
 }
 
 .faq-item {
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
   overflow: hidden;
-  background-color: #fff;
-  transition: all 0.3s ease;
+  background-color: var(--bg-secondary);
+  transition: box-shadow 0.3s ease;
 }
 
 .faq-item:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .faq-question {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  width: 100%;
+  padding: 1.25rem 1.5rem;
   cursor: pointer;
-  background-color: #fafafa;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: none;
+  font-family: inherit;
+  text-align: left;
   transition: background-color 0.3s ease;
 }
 
 .faq-question:hover {
-  background-color: #f0f0f0;
+  background-color: var(--bg-tertiary);
 }
 
 .faq-question h3 {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin: 0;
   flex: 1;
   padding-right: 1rem;
+  letter-spacing: -0.01em;
 }
 
 .faq-icon {
   font-size: 1.5rem;
-  color: #222;
+  color: var(--text-primary);
   font-weight: bold;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
-  transition: transform 0.3s ease;
 }
 
 .faq-answer {
@@ -77,25 +82,21 @@
   overflow: hidden;
   transition: max-height 0.4s ease-out, padding 0.4s ease-out;
   padding: 0 1.5rem;
-  background-color: #fff;
+  background-color: var(--bg-primary);
 }
 
 .faq-answer p {
   margin: 0;
-  color: #555;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 
 .faq-item.active .faq-answer {
   max-height: 500px;
-  padding: 1.5rem;
-  border-top: 1px solid #eaeaea;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 .faq-item.active .faq-icon {
-  color: #ff4757;
-}
-
-.faq-item.active .faq-question {
-  background-color: #fff;
+  color: #ff3f6c;
 }

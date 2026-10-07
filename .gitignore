@@ -55,3 +55,7 @@ updateLogs.md
 *.pem
 *.key
 *.cert
+
+# Local secret files
+tokens.env
+*.secrets

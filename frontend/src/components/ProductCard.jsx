@@ -1,40 +1,65 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
+import { Star } from 'lucide-react';
+import { discountPercent, formatCount, formatPrice, sizedImage } from '../lib/format';
 import './ProductCard.css';
 
-const ProductCard = ({ product, onAddToCart }) => {
+const LOW_STOCK = 10;
+
+const ProductCard = ({ product, onQuickAdd }) => {
+  const discount = discountPercent(product.price, product.mrp);
+  const needsSize = product.sizes?.length > 0;
+  const outOfStock = product.stock <= 0;
+
+  let badge = null;
+  if (outOfStock) badge = 'Sold out';
+  else if (product.stock <= LOW_STOCK) badge = `Only ${product.stock} left`;
+  else if (discount >= 45) badge = 'Hot deal';
+
   return (
     <div className="product-card animate-fade-in-up">
-      <Link to={`/product/${product.id}`} target="_blank" rel="noopener noreferrer" className="product-link">
+      <Link to={`/product/${product.id}`} className="product-link">
         <div className="product-image-container">
-          <span className="badge-tag">Selling Fast</span>
-          <img 
-            src={`https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80&sig=${product.id}`} 
-            alt={product.name} 
+          {badge && <span className="badge-tag">{badge}</span>}
+          <img
+            src={sizedImage(product.imageUrl, 500)}
+            alt={product.name}
             className="product-image"
+            loading="lazy"
+            width="500"
+            height="500"
           />
         </div>
         <div className="product-info">
-          <div className="rating">★ 4.6 | 143 Reviews</div>
+          <div className="product-brand">{product.brand}</div>
           <h3 className="product-title">{product.name}</h3>
-          <p className="product-description">{product.description}</p>
-          
+          {product.ratingCount > 0 && (
+            <div className="rating">
+              <Star size={12} fill="currentColor" aria-hidden="true" /> {product.rating.toFixed(1)}
+              <span className="rating-count"> | {formatCount(product.ratingCount)}</span>
+            </div>
+          )}
           <div className="price-container">
-            <span className="current-price">${product.price.toFixed(2)}</span>
-            <span className="original-price">${(product.price * 1.2).toFixed(2)}</span>
-            <span className="discount">15% OFF</span>
+            <span className="current-price">{formatPrice(product.price)}</span>
+            {discount > 0 && (
+              <>
+                <span className="original-price">{formatPrice(product.mrp)}</span>
+                <span className="discount">{discount}% OFF</span>
+              </>
+            )}
           </div>
         </div>
       </Link>
-      
+
       <div className="product-actions">
-        <div className="offer-text">
-          <span className="check-icon">✓</span> Get it for ${(product.price * 0.8).toFixed(2)} with FLAT20
-        </div>
-        
-        <button className="add-to-cart-btn" onClick={() => onAddToCart(product)}>
-          <span className="cart-icon">🛍️</span> ADD TO CART
-        </button>
+        {needsSize ? (
+          <Link to={`/product/${product.id}`} className="add-to-cart-btn secondary">
+            Choose size
+          </Link>
+        ) : (
+          <button className="add-to-cart-btn" onClick={() => onQuickAdd?.(product)} disabled={outOfStock}>
+            {outOfStock ? 'Sold out' : 'Add to bag'}
+          </button>
+        )}
       </div>
     </div>
   );

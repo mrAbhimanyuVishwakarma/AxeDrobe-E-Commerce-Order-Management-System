@@ -1,94 +1,75 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { BRAND_NAME, FREE_SHIPPING_FROM, SHIPPING_FEE } from '../config';
+import { formatPrice } from '../lib/format';
 import './FAQSection.css';
+
+const faqs = [
+  {
+    question: `How do I sign in to ${BRAND_NAME}?`,
+    answer: 'Sign in with Google, with your email or mobile number and a one-time code, or with your email and password. Signing in with a code for the first time creates your account automatically.',
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer: 'All orders are currently Cash on Delivery. Pay in cash or by UPI to the delivery partner when your order arrives.',
+  },
+  {
+    question: 'How much does delivery cost?',
+    answer: `Delivery is free on orders of ${formatPrice(FREE_SHIPPING_FROM)} or more. Smaller orders have a flat ${formatPrice(SHIPPING_FEE)} delivery fee. Most orders arrive within 3 to 5 business days.`,
+  },
+  {
+    question: 'How do I track my order?',
+    answer: 'Open My Orders, or go to Track Order and enter the order number from your confirmation (it starts with AXD). You will see each step from confirmation to delivery.',
+  },
+  {
+    question: 'Can I cancel my order?',
+    answer: 'Yes. Go to My Orders and tap Cancel on any order that has not shipped yet. The items go straight back into stock and you will get a confirmation email.',
+  },
+  {
+    question: 'What is your return policy?',
+    answer: 'You can return unused items with tags within 14 days of delivery. Contact our support team with your order number and we will arrange a pickup.',
+  },
+  {
+    question: 'How do I find my size?',
+    answer: 'Every product page lists the available sizes. Our clothing is true to size; if you are between sizes, we recommend going one size up for a relaxed fit.',
+  },
+  {
+    question: 'I forgot my password. What should I do?',
+    answer: 'Choose "Forgot password" on the sign-in page. We will send a code to your email or mobile number so you can set a new password. You can also just sign in with a code.',
+  },
+];
 
 const FAQSection = () => {
   const [activeIndex, setActiveIndex] = useState(null);
 
-  const faqs = [
-    {
-      question: "Which is the biggest sale on AxeDrobe?",
-      answer: "The biggest sale on AxeDrobe is our annual Black Friday and Cyber Monday event, offering discounts up to 80% off. We also host a massive Summer Clearance Sale."
-    },
-    {
-      question: "What is AxeDrobe helpline number 24x7? / How can I contact customer care?",
-      answer: "You can contact our 24x7 customer care and helpline at 1-800-AXEDROBE or email us at support@axedrobe.com."
-    },
-    {
-      question: "How to cancel an order on AxeDrobe?",
-      answer: "To cancel an order on AxeDrobe, go to 'My Account', select 'Orders', find the order you wish to cancel, and click 'Cancel Order'. Note that orders can only be canceled before they are dispatched."
-    },
-    {
-      question: "How to sell on AxeDrobe?",
-      answer: "To become a seller on AxeDrobe, visit our 'Seller Portal' at seller.axedrobe.com, click on 'Register as a Seller', and follow the onboarding instructions to list your products."
-    },
-    {
-      question: "How to add or redeem a gift card in AxeDrobe?",
-      answer: "To add or redeem an AxeDrobe gift card, navigate to your 'Account Dashboard', select 'Gift Cards', and enter your unique gift card code to apply the balance to your account."
-    },
-    {
-      question: "Who owns AxeDrobe?",
-      answer: "AxeDrobe is privately owned by the AxeDrobe Group Inc., dedicated to providing top-tier fashion and lifestyle products."
-    },
-    {
-      question: "How to track AxeDrobe order?",
-      answer: "Track your AxeDrobe order by visiting the 'Track Order' page on our website and entering your Order ID and email address. You will also receive real-time updates via email."
-    },
-    {
-      question: "How to delete AxeDrobe account?",
-      answer: "To delete your AxeDrobe account, log in, go to 'Account Settings', scroll to the bottom, and click 'Delete Account'. Please note this action is irreversible."
-    },
-    {
-      question: "When is AxeDrobe sale?",
-      answer: "AxeDrobe sales happen throughout the year, including End of Season Sales, Holiday Sales, and Flash Sales. Subscribe to our newsletter to stay updated on upcoming sales!"
-    },
-    {
-      question: "How to delete AxeDrobe order history?",
-      answer: "Currently, AxeDrobe does not support deleting individual order history for accounting and warranty tracking purposes. However, you can archive orders in your account settings."
-    },
-    {
-      question: "How to get AxeDrobe coupon?",
-      answer: "You can get AxeDrobe coupons by signing up for our newsletter, following our social media channels, or checking the 'Promotions' tab on our homepage."
-    }
-  ];
-
-  const toggleFAQ = (index) => {
-    setActiveIndex(activeIndex === index ? null : index);
-  };
-
   const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(faq => ({
-      "@type": "Question",
-      "name": faq.question,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": `<p>${faq.answer}</p>`
-      }
-    }))
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+    })),
   };
 
   return (
     <section className="faq-section container">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="faq-header">
         <h2>Frequently Asked Questions</h2>
-        <p>Find answers to the most common questions about AxeDrobe.</p>
+        <p>Everything you need to know about shopping with {BRAND_NAME}.</p>
       </div>
       <div className="faq-list">
         {faqs.map((faq, index) => (
-          <div
-            key={index}
-            className={`faq-item ${activeIndex === index ? 'active' : ''}`}
-            onClick={() => toggleFAQ(index)}
-          >
-            <div className="faq-question">
+          <div key={faq.question} className={`faq-item ${activeIndex === index ? 'active' : ''}`}>
+            <button
+              type="button"
+              className="faq-question"
+              aria-expanded={activeIndex === index}
+              onClick={() => setActiveIndex(activeIndex === index ? null : index)}
+            >
               <h3>{faq.question}</h3>
-              <span className="faq-icon">{activeIndex === index ? '-' : '+'}</span>
-            </div>
+              <span className="faq-icon" aria-hidden="true">{activeIndex === index ? '-' : '+'}</span>
+            </button>
             <div className="faq-answer">
               <p>{faq.answer}</p>
             </div>

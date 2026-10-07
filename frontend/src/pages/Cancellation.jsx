@@ -1,28 +1,36 @@
-import React from 'react';
+import { Link } from 'react-router-dom';
 import './Policies.css';
 
 const Cancellation = () => {
   return (
     <div className="policy-page">
       <h1>Cancellation & Returns</h1>
-      
-      <h2>Order Cancellation</h2>
-      <p>You can cancel your order within 24 hours of placing it. To cancel an order, please visit the "Orders" section in your account or contact our support team immediately. Once an order has been processed for shipping, it cannot be canceled.</p>
 
-      <h2>Return Policy</h2>
-      <p>We accept returns up to 14 days after delivery, if the item is unused and in its original condition. We will refund the full order amount minus the shipping costs for the return.</p>
-      
-      <h3>How to initiate a return:</h3>
+      <h2>Cancelling an order</h2>
+      <p>
+        You can cancel any order that has not shipped yet. Open <Link to="/orders">My Orders</Link>, find the order
+        and choose <strong>Cancel order</strong>. The cancellation is instant and you will receive a confirmation
+        email. Once an order has shipped it can no longer be cancelled, but you can return it after delivery.
+      </p>
+
+      <h2>Return policy</h2>
+      <p>
+        We accept returns within 14 days of delivery for items that are unused, unwashed and have their original tags.
+        Innerwear, socks and items marked as non-returnable cannot be returned for hygiene reasons.
+      </p>
+
+      <h3>How to return an item</h3>
       <ol>
-        <li>Log into your Axedrobe account and navigate to the "Orders" page.</li>
-        <li>Select the order containing the item you wish to return.</li>
-        <li>Click on "Request Return" and follow the instructions.</li>
-        <li>Print the provided return shipping label and attach it to your package.</li>
-        <li>Drop off the package at the designated courier location.</li>
+        <li>Note your order number from <Link to="/orders">My Orders</Link> (it starts with AXD).</li>
+        <li>Contact us through the <Link to="/contact">Help & Contact</Link> page with the order number and the item you want to return.</li>
+        <li>Pack the item with its tags; our courier partner will pick it up within 2 to 3 business days.</li>
       </ol>
 
       <h2>Refunds</h2>
-      <p>Once we receive your return, we will inspect the item and notify you of the approval or rejection of your refund. If approved, your refund will be processed, and a credit will automatically be applied to your original method of payment within 5-7 business days.</p>
+      <p>
+        Once the returned item passes a quality check, we refund the amount to your bank account or UPI ID within
+        5 to 7 business days. Delivery charges, if any, are not refunded.
+      </p>
     </div>
   );
 };

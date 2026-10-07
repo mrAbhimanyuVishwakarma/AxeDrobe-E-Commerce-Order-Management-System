@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import './Policies.css';
 
 const faqs = [
   {
     question: "How long does shipping take?",
-    answer: "Standard shipping typically takes 3-5 business days. Expedited shipping options are available at checkout."
+    answer: "Most orders arrive within 3-5 business days. Delivery is free on orders of Rs 999 or more."
   },
   {
     question: "What is your return policy?",
@@ -13,15 +13,15 @@ const faqs = [
   },
   {
     question: "Do you ship internationally?",
-    answer: "Yes, we ship to most countries worldwide. International shipping rates and times vary depending on the destination."
+    answer: "Not yet. We currently deliver to all serviceable PIN codes across India."
   },
   {
     question: "How can I track my order?",
-    answer: "Once your order ships, you will receive a confirmation email with a tracking number. You can also track your order via the 'Track Orders' page."
+    answer: "Open My Orders, or enter your order number (it starts with AXD) on the Track Orders page to see every step from confirmation to delivery."
   },
   {
     question: "Are your sizes true to size?",
-    answer: "Our clothing generally runs true to size. We provide detailed sizing charts on every product page to help you find the perfect fit."
+    answer: "Our clothing runs true to size. Every product page lists the available sizes; if you are between sizes, go one size up for a relaxed fit."
   }
 ];
 

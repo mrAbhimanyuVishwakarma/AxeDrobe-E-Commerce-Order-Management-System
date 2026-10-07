@@ -30,11 +30,11 @@ exit /b 0
 :START_SERVICES
 
 echo.
-echo Starting all microservices, databases, and frontend...
+echo Starting MongoDB, Kafka, all microservices and the frontend...
 echo This might take a minute or two on the first run...
 echo.
 
-docker-compose up -d --build
+docker compose up -d --build
 
 if %errorlevel% neq 0 (
     echo.
@@ -51,9 +51,9 @@ echo.
 echo  Website: http://localhost:8080
 echo.
 echo  Swagger UI Links:
-echo  - Product Service: http://localhost:8082/swagger-ui/index.html
-echo  - Order Service: http://localhost:8083/swagger-ui/index.html
-echo  - Inventory Service: http://localhost:8084/swagger-ui/index.html
+echo  - User Service: http://localhost:8081/swagger-ui.html
+echo  - Product Service: http://localhost:8082/swagger-ui.html
+echo  - Order Service: http://localhost:8083/swagger-ui.html
 echo.
 
 :MENU
@@ -73,14 +73,14 @@ goto MENU
 
 :STOP
 echo Stopping all services...
-docker-compose down
+docker compose down
 echo Services stopped successfully.
 pause
 exit /b 0
 
 :RESTART
 echo Restarting all services...
-docker-compose restart
+docker compose restart
 echo Services restarted successfully.
 goto MENU
 

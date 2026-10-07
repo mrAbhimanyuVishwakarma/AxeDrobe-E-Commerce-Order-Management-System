@@ -23,4 +23,11 @@ export default defineConfig([
       'react-hooks/set-state-in-effect': 'warn'
     }
   },
+  {
+    // Context modules export a provider component together with its hook
+    files: ['src/context/**/*.{js,jsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
