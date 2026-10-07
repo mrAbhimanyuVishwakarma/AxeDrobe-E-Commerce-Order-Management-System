@@ -4,10 +4,16 @@ A full-stack fashion store built as a set of Spring Boot microservices with a Re
 
 **Live demo:** https://axedrobe.vercel.app
 
-<img width="1250" height="703" alt="axedrobe_dark" src="https://github.com/user-attachments/assets/2389ee10-32e9-4587-b3f0-11d6212c1d91" />
-<img width="1250" height="703" alt="axedrobe_light" src="https://github.com/user-attachments/assets/a8541d80-165b-4217-8710-54e842a16b27" />
-<img width="966" height="596" alt="axedrobe_shop" src="https://github.com/user-attachments/assets/98db89d0-8ee5-4b7c-a492-6fac02d3a9f3" />
-<img width="1004" height="408" alt="axedrobe_jcart" src="https://github.com/user-attachments/assets/a64efb2a-8909-4757-93a2-868f6abe487d" />
+<img width="1693" height="771" alt="image" src="https://github.com/user-attachments/assets/48cc3381-e49f-4cab-8fa1-cd73afb47777" />
+<img width="1693" height="959" alt="image" src="https://github.com/user-attachments/assets/42fa1156-82aa-4e99-bb7b-3f43ed91741c" />
+<img width="1693" height="959" alt="image" src="https://github.com/user-attachments/assets/447fbd09-c988-4d21-b922-bbcfb6fdbffa" />
+<img width="1333" height="806" alt="image" src="https://github.com/user-attachments/assets/6cb1aeae-eecb-4bdd-bb43-8209b132dee0" />
+<img width="1693" height="959" alt="image" src="https://github.com/user-attachments/assets/7c8c3a1f-b11d-4849-bcd7-980dee4b79fc" />
+<img width="1602" height="803" alt="image" src="https://github.com/user-attachments/assets/38e98a63-09cc-4849-8ef9-9cd5f87ee216" />
+<img width="1272" height="806" alt="image" src="https://github.com/user-attachments/assets/c2a040f9-6db2-447d-a81c-f560bd0b15c5" />
+
+
+
 
 ## Features
 
