@@ -1,44 +1,71 @@
 {
   "info": {
-    "name": "E-Commerce Order Management System",
-    "description": "API collection for the E-Commerce Order Management System (Monolith & Microservices).",
+    "name": "AxeDrobe API",
+    "description": "Requests for the user, product and order services. Run 'Request code' then 'Sign in with code' to store a token; with OTP_DEMO_MODE=true the code is captured automatically. Admin requests need an account listed in ADMIN_EMAILS.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "userUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "productUrl",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "orderUrl",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "identifier",
+      "value": "you@example.com"
+    },
+    {
+      "key": "otp",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "orderNumber",
+      "value": ""
+    }
+  ],
   "item": [
     {
-      "name": "User Service (Auth)",
+      "name": "User Service",
       "item": [
         {
-          "name": "Register User",
+          "name": "Sign-in options",
           "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"CUSTOMER\"\n}"
-            },
+            "method": "GET",
+            "header": [],
             "url": {
-              "raw": "http://localhost:8081/api/auth/register",
-              "protocol": "http",
+              "raw": "{{userUrl}}/api/auth/options",
               "host": [
-                "localhost"
+                "{{userUrl}}"
               ],
-              "port": "8081",
               "path": [
                 "api",
                 "auth",
-                "register"
+                "options"
               ]
             }
           }
         },
         {
-          "name": "Login User",
+          "name": "Request code (email or mobile)",
           "request": {
             "method": "POST",
             "header": [
@@ -47,21 +74,296 @@
                 "value": "application/json"
               }
             ],
+            "url": {
+              "raw": "{{userUrl}}/api/auth/otp/request",
+              "host": [
+                "{{userUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "otp",
+                "request"
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
-            },
+              "raw": "{\n  \"identifier\": \"{{identifier}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.demoCode) { pm.collectionVariables.set('otp', data.demoCode); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in with code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
-              "raw": "http://localhost:8081/api/auth/login",
-              "protocol": "http",
+              "raw": "{{userUrl}}/api/auth/otp/verify",
               "host": [
-                "localhost"
+                "{{userUrl}}"
               ],
-              "port": "8081",
+              "path": [
+                "api",
+                "auth",
+                "otp",
+                "verify"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{identifier}}\",\n  \"otp\": \"{{otp}}\",\n  \"name\": \"Riya Sharma\"\n}"
+            },
+            "description": "Creates the account on first sign-in. 'name' is only used for new accounts."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register with password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{userUrl}}/api/auth/register",
+              "host": [
+                "{{userUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riya Sharma\",\n  \"email\": \"{{identifier}}\",\n  \"password\": \"s3cure-pass\",\n  \"otp\": \"{{otp}}\"\n}"
+            },
+            "description": "Request a code for the email first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in with password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{userUrl}}/api/auth/login",
+              "host": [
+                "{{userUrl}}"
+              ],
               "path": [
                 "api",
                 "auth",
                 "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{identifier}}\",\n  \"password\": \"s3cure-pass\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{userUrl}}/api/auth/password/reset",
+              "host": [
+                "{{userUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "password",
+                "reset"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{identifier}}\",\n  \"otp\": \"{{otp}}\",\n  \"newPassword\": \"new-s3cure-pass\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sign in with Google",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{userUrl}}/api/auth/google",
+              "host": [
+                "{{userUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credential\": \"<Google ID token>\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{userUrl}}/api/users/me",
+              "host": [
+                "{{userUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{userUrl}}/api/users/me",
+              "host": [
+                "{{userUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riya S.\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
               ]
             }
           }
@@ -72,52 +374,187 @@
       "name": "Product Service",
       "item": [
         {
-          "name": "Get All Products",
+          "name": "List products",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8082/api/products",
-              "protocol": "http",
+              "raw": "{{productUrl}}/api/products",
               "host": [
-                "localhost"
+                "{{productUrl}}"
               ],
-              "port": "8082",
               "path": [
                 "api",
                 "products"
               ]
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (Array.isArray(data) && data.length) { pm.collectionVariables.set('productId', data[0].id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{productUrl}}/api/products/{{productId}}",
+              "host": [
+                "{{productUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productId}}"
+              ]
+            }
           }
         },
         {
-          "name": "Create Product",
+          "name": "Create product (admin)",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Wireless Mouse\",\n    \"description\": \"Bluetooth mouse\",\n    \"price\": 25.0,\n    \"stock\": 100\n}"
-            },
             "url": {
-              "raw": "http://localhost:8082/api/products",
-              "protocol": "http",
+              "raw": "{{productUrl}}/api/products",
               "host": [
-                "localhost"
+                "{{productUrl}}"
               ],
-              "port": "8082",
               "path": [
                 "api",
                 "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ribbed Cotton Socks (Pack of 3)\",\n  \"brand\": \"Axe Basics\",\n  \"category\": \"Socks\",\n  \"gender\": \"UNISEX\",\n  \"color\": \"Assorted\",\n  \"description\": \"Soft combed cotton socks with ribbed cuffs.\",\n  \"price\": 299,\n  \"mrp\": 499,\n  \"stock\": 100,\n  \"rating\": 4.2,\n  \"ratingCount\": 0,\n  \"sizes\": [\n    \"Free Size\"\n  ],\n  \"imageUrl\": \"https://images.pexels.com/photos/6787035/pexels-photo-6787035.jpeg\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update product (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{productUrl}}/api/products/{{productId}}",
+              "host": [
+                "{{productUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Classic Crew Neck T-Shirt\",\n  \"brand\": \"Axe Basics\",\n  \"category\": \"T-Shirts\",\n  \"gender\": \"MEN\",\n  \"color\": \"White\",\n  \"description\": \"Updated description\",\n  \"price\": 449,\n  \"mrp\": 799,\n  \"stock\": 150,\n  \"rating\": 4.4,\n  \"ratingCount\": 2381,\n  \"sizes\": [\n    \"S\",\n    \"M\",\n    \"L\",\n    \"XL\",\n    \"XXL\"\n  ],\n  \"imageUrl\": \"https://images.pexels.com/photos/24779116/pexels-photo-24779116.jpeg\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Adjust stock (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{productUrl}}/api/products/{{productId}}/stock",
+              "host": [
+                "{{productUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productId}}",
+                "stock"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": 10\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete product (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{productUrl}}/api/products/{{productId}}",
+              "host": [
+                "{{productUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
               ]
             }
           }
@@ -128,33 +565,201 @@
       "name": "Order Service",
       "item": [
         {
-          "name": "Create Order",
+          "name": "Place order",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"userId\": 1,\n    \"productId\": 1,\n    \"quantity\": 2\n}"
-            },
             "url": {
-              "raw": "http://localhost:8083/api/orders",
-              "protocol": "http",
+              "raw": "{{orderUrl}}/api/orders",
               "host": [
-                "localhost"
+                "{{orderUrl}}"
               ],
-              "port": "8083",
               "path": [
                 "api",
                 "orders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"size\": \"M\",\n      \"quantity\": 1\n    }\n  ],\n  \"shippingAddress\": {\n    \"fullName\": \"Riya Sharma\",\n    \"phone\": \"9876543210\",\n    \"line1\": \"12 MG Road\",\n    \"line2\": \"Near Metro Station\",\n    \"city\": \"Bengaluru\",\n    \"state\": \"Karnataka\",\n    \"pincode\": \"560001\"\n  }\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.orderNumber) { pm.collectionVariables.set('orderNumber', data.orderNumber); pm.collectionVariables.set('orderId', data.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get order by number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderNumber}}",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderNumber}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderId}}/cancel",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "cancel"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update status (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/{{orderId}}/status",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\"\n}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "CONFIRMED -> SHIPPED -> OUT_FOR_DELIVERY -> DELIVERED, or CANCELLED"
+          }
+        },
+        {
+          "name": "Latest orders (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{orderUrl}}/api/orders/admin/latest",
+              "host": [
+                "{{orderUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "admin",
+                "latest"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
               ]
             }
           }

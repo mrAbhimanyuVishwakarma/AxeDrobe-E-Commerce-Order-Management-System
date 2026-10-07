@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, Bot } from 'lucide-react';
 import './Policies.css';
 
 const ContactUs = () => {
   const [messages, setMessages] = useState([
-    { text: "Hi there! I'm the Axedrobe AI Assistant. How can I help you today?", sender: 'bot' }
+    { text: "Hi there! I'm the Axedrobe help assistant. Ask me about delivery, returns, cancellations or tracking.", sender: 'bot' }
   ]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef(null);
@@ -26,17 +26,19 @@ const ContactUs = () => {
     setMessages(newMessages);
     setInputValue('');
 
-    // Simulate AI response based on keywords
+    // Canned answers for the most common questions, matched by keyword
     setTimeout(() => {
       const lowerInput = inputValue.toLowerCase();
       let botResponse = "I'm sorry, I didn't quite catch that. You can ask me about shipping, returns, or tracking your order. For complex issues, please email our support team.";
       
       if (lowerInput.includes('shipping') || lowerInput.includes('delivery')) {
-        botResponse = "Standard shipping takes 3-5 business days. We also offer expedited shipping for a flat rate of $15. International shipping varies by country.";
+        botResponse = "Most orders arrive in 3-5 business days. Delivery is free on orders of Rs 999 or more, otherwise it's a flat Rs 79. We deliver across India.";
       } else if (lowerInput.includes('return') || lowerInput.includes('refund')) {
-        botResponse = "We have a 14-day return policy for unworn items with tags attached. You can initiate a return from the Orders page in your account.";
+        botResponse = "We have a 14-day return policy for unused items with tags attached. Send us your order number using the form on this page and we'll arrange a pickup.";
       } else if (lowerInput.includes('track') || lowerInput.includes('where is my order')) {
-        botResponse = "You can track your order using your Order ID and Email on our 'Track Orders' page, accessible from the footer.";
+        botResponse = "Open My Orders, or enter your order number (it starts with AXD) on the Track Orders page.";
+      } else if (lowerInput.includes('cancel')) {
+        botResponse = "You can cancel any order that hasn't shipped yet from the My Orders page. The cancellation is instant.";
       } else if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
         botResponse = "Hello! How can I assist you with your Axedrobe shopping experience today?";
       }
@@ -48,7 +50,7 @@ const ContactUs = () => {
   return (
     <div className="policy-page" style={{ maxWidth: '1000px' }}>
       <h1 style={{ marginBottom: '10px' }}>Contact Us</h1>
-      <p style={{ textAlign: 'center', marginBottom: '50px' }}>We're here to help! Reach out to us or ask our AI assistant below.</p>
+      <p style={{ textAlign: 'center', marginBottom: '50px' }}>We're here to help! Send us a message or ask our help assistant below.</p>
 
       <div className="contact-container">
         {/* Contact Details & Manual Form */}
@@ -90,12 +92,12 @@ const ContactUs = () => {
           </form>
         </div>
 
-        {/* Simulated AI Bot */}
-        <div className="ai-bot-container" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+        {/* Keyword based help assistant */}
+        <div className="help-chat-container" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
           <div className="chat-window" style={{ border: 'none', height: '100%' }}>
             <div className="chat-header">
               <Bot size={24} />
-              Axedrobe AI Support
+              Axedrobe Help
             </div>
             <div className="chat-messages">
               {messages.map((msg, idx) => (

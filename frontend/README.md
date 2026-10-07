@@ -1,16 +1,40 @@
-# React + Vite
+# AxeDrobe Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite storefront for the AxeDrobe services. See the [main README](../README.md) for the full project.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev       # http://localhost:5173
+npm run lint
+npm run build     # production build in dist/
+npm run preview   # serve the production build
+```
 
-## React Compiler
+## Configuration
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Copy `.env.example` to `.env.local` and point the app at the services. Without it, it uses `localhost:8081-8083`.
 
-## Expanding the ESLint configuration
+| Variable | Purpose |
+| --- | --- |
+| `VITE_USER_SERVICE_URL` | User service (sign-in, profile) |
+| `VITE_PRODUCT_SERVICE_URL` | Product service (catalog) |
+| `VITE_ORDER_SERVICE_URL` | Order service (checkout, orders) |
+| `VITE_WARMUP_URLS` | Optional extra health URLs pinged on load |
+| `VITE_BRAND_NAME` | Optional store name |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Google sign-in needs no frontend setting: the client ID is read from the user service (`/api/auth/options`).
+
+## Layout
+
+```text
+src/
+├── components/   # header, footer, product card, order timeline...
+├── context/      # auth (JWT), bag, theme, toasts
+├── hooks/        # catalog loading, quick add to bag
+├── lib/          # API clients, formatting, catalog helpers
+└── pages/        # one file per route
+```
+
+`vercel.json` rewrites every path to `index.html` so client-side routes work on refresh.

@@ -1,7 +1,7 @@
 {
-  "name": "frontend",
+  "name": "axedrobe-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
     "deploy": "npm run build && wrangler pages deploy"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "axios": "^1.17.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.6",

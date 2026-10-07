@@ -1,210 +1,323 @@
-import React, { useState, useContext } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useContext, useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthContext } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
+import { errorMessage, userApi } from '../lib/api';
+import { firstName } from '../lib/format';
+import { BRAND_NAME } from '../config';
 import './Auth.css';
 
+const EMPTY_FORM = { identifier: '', password: '', name: '', email: '', otp: '', newPassword: '' };
+
+const TEXT = {
+  signin: { title: 'Welcome back', subtitle: 'Sign in to check out faster and track your orders.' },
+  register: { title: 'Create your account', subtitle: `Join ${BRAND_NAME} in under a minute.` },
+  reset: { title: 'Reset your password', subtitle: 'We will send a code to your email or mobile number.' },
+};
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [step, setStep] = useState('credentials'); // 'credentials' or 'otp'
-  const [formData, setFormData] = useState({ name: '', email: '', mobileNumber: '', password: '', identifier: '', otp: '' });
-  const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  const { token, login } = useContext(AuthContext);
+  const { isDarkMode } = useContext(ThemeContext);
   const { showToast } = useToast();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/';
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const [options, setOptions] = useState(null);
+  const [view, setView] = useState('signin'); // signin | register | reset
+  const [method, setMethod] = useState('password'); // password | otp (sign in only)
+  const [step, setStep] = useState('form'); // form | code
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [codeInfo, setCodeInfo] = useState(null);
+  const [resendIn, setResendIn] = useState(0);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    userApi
+      .get('/api/auth/options')
+      .then((response) => setOptions(response.data))
+      .catch(() => setOptions({ googleClientId: null, emailOtp: true, smsOtp: true, demoMode: false }));
+  }, []);
+
+  useEffect(() => {
+    if (resendIn <= 0) return undefined;
+    const timer = setTimeout(() => setResendIn((seconds) => seconds - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  if (token) {
+    return <Navigate to={from} replace />;
+  }
+
+  const setField = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const switchView = (next) => {
+    setView(next);
+    setStep('form');
+    setError('');
+    setCodeInfo(null);
+    setForm((f) => ({ ...f, otp: '', password: '', newPassword: '' }));
   };
 
-  const handleCredentialsSubmit = async (e) => {
-    e.preventDefault();
+  const finish = (data) => {
+    showToast(`Welcome, ${firstName(data.user.name)}!`, 'success');
+    login(data.token);
+  };
+
+  // Wraps a submit handler with loading and error handling
+  const run = (action) => async (e) => {
+    e?.preventDefault();
     setError('');
-    
+    setBusy(true);
     try {
-      if (isLogin) {
-        // Login request
-        const res = await axios.post(`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:8081'}/api/auth/login`, {
-          identifier: formData.identifier,
-          password: formData.password
-        });
-        
-        if (res.data.requiresOtp) {
-          showToast(res.data.message, "success");
-          setStep('otp');
-        }
-      } else {
-        // Register request
-        const res = await axios.post(`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:8081'}/api/auth/register`, {
-          name: formData.name,
-          email: formData.email,
-          mobileNumber: formData.mobileNumber || null,
-          password: formData.password,
-          role: 'CUSTOMER'
-        });
-        
-        if (res.data.requiresOtp) {
-          showToast(res.data.message, "success");
-          // Pre-fill identifier for OTP verification
-          setFormData({ ...formData, identifier: formData.email });
-          setStep('otp');
-        }
-      }
+      await action();
     } catch (err) {
-      console.error(err);
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Authentication failed. Please check your credentials.');
-      }
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_USER_SERVICE_URL || 'http://localhost:8081'}/api/auth/verify-otp`, {
-        identifier: formData.identifier,
-        otp: formData.otp
+  const sendCode = async (identifier) => {
+    const { data } = await userApi.post('/api/auth/otp/request', { identifier });
+    setCodeInfo(data);
+    setResendIn(data.resendAfterSeconds || 30);
+    setForm((f) => ({ ...f, otp: '' }));
+    return data;
+  };
+
+  const passwordLogin = run(async () => {
+    const { data } = await userApi.post('/api/auth/login', { identifier: form.identifier, password: form.password });
+    finish(data);
+  });
+
+  const startOtpLogin = run(async () => {
+    await sendCode(form.identifier);
+    setStep('code');
+  });
+
+  const startRegister = run(async () => {
+    const data = await sendCode(form.email);
+    if (!data.newUser) {
+      setError('An account with this email already exists. Please sign in instead.');
+      return;
+    }
+    setStep('code');
+  });
+
+  const startReset = run(async () => {
+    const data = await sendCode(form.identifier);
+    if (data.newUser) {
+      setError("We couldn't find an account with that email or mobile number.");
+      return;
+    }
+    setStep('code');
+  });
+
+  const verifyCode = run(async () => {
+    let response;
+    if (view === 'register') {
+      response = await userApi.post('/api/auth/register', {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        otp: form.otp,
       });
-      
-      if (res.data.token) {
-        login(res.data.token);
-        showToast("Successfully verified and logged in!", "success");
-        navigate('/');
-      }
-    } catch (err) {
-      console.error(err);
-      if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Invalid or expired OTP.');
-      }
+    } else if (view === 'reset') {
+      response = await userApi.post('/api/auth/password/reset', {
+        identifier: form.identifier,
+        otp: form.otp,
+        newPassword: form.newPassword,
+      });
+    } else {
+      response = await userApi.post('/api/auth/otp/verify', {
+        identifier: form.identifier,
+        otp: form.otp,
+        name: codeInfo?.newUser ? form.name : null,
+      });
     }
-  };
+    finish(response.data);
+  });
+
+  const resendCode = run(async () => {
+    await sendCode(view === 'register' ? form.email : form.identifier);
+    showToast('A new code is on its way', 'success');
+  });
+
+  const googleLogin = (credentialResponse) =>
+    run(async () => {
+      const { data } = await userApi.post('/api/auth/google', { credential: credentialResponse.credential });
+      finish(data);
+    })();
+
+  const text = step === 'code'
+    ? { title: "Verify it's you", subtitle: `Enter the 6-digit code sent to ${codeInfo?.sentTo}.` }
+    : TEXT[view];
+
+  const googleClientId = options?.googleClientId;
+  const showGoogle = Boolean(googleClientId) && view !== 'reset' && step === 'form';
 
   return (
     <div className="auth-page">
       <div className="auth-container glass-panel animate-fade-in-up">
-        <h2>{step === 'otp' ? 'Verify OTP' : (isLogin ? 'Welcome Back' : 'Create Account')}</h2>
-        <p className="auth-subtitle">
-          {step === 'otp' ? 'Enter the 6-digit verification code sent to your email/mobile.' : (isLogin ? 'Enter your details to access your Axedrobe account.' : 'Join Axedrobe for exclusive access to premium care.')}
-        </p>
+        <h2>{text.title}</h2>
+        <p className="auth-subtitle">{text.subtitle}</p>
 
-        {error && <div className="error-alert">{error}</div>}
+        {view !== 'reset' && step === 'form' && (
+          <div className="auth-tabs" role="tablist">
+            <button role="tab" aria-selected={view === 'signin'} className={view === 'signin' ? 'active' : ''} onClick={() => switchView('signin')}>
+              Sign in
+            </button>
+            <button role="tab" aria-selected={view === 'register'} className={view === 'register' ? 'active' : ''} onClick={() => switchView('register')}>
+              Create account
+            </button>
+          </div>
+        )}
 
-        {step === 'credentials' ? (
-          <form onSubmit={handleCredentialsSubmit} className="auth-form">
-            {!isLogin && (
-              <div className="input-group">
-                <label>Full Name</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={formData.name} 
-                  onChange={handleChange} 
-                  required={!isLogin} 
-                  placeholder="John Doe"
+        {error && <div className="error-alert" role="alert">{error}</div>}
+
+        {step === 'code' && codeInfo?.demoCode && (
+          <div className="demo-code" role="status">
+            Demo mode: your code is <strong>{codeInfo.demoCode}</strong>
+          </div>
+        )}
+
+        {showGoogle && (
+          <>
+            <GoogleOAuthProvider clientId={googleClientId}>
+              <div className="google-btn">
+                <GoogleLogin
+                  onSuccess={googleLogin}
+                  onError={() => setError('Google sign-in did not complete. Please try again.')}
+                  theme={isDarkMode ? 'filled_black' : 'outline'}
+                  size="large"
+                  shape="pill"
+                  text={view === 'register' ? 'signup_with' : 'continue_with'}
+                  width="320"
                 />
               </div>
-            )}
-            
-            {!isLogin ? (
-              <>
-                <div className="input-group">
-                  <label>Email Address</label>
-                  <input 
-                    type="email" 
-                    name="email" 
-                    value={formData.email} 
-                    onChange={handleChange} 
-                    required 
-                    placeholder="you@example.com"
-                  />
-                </div>
-                
-                <div className="input-group">
-                  <label>Mobile Number (Optional)</label>
-                  <input 
-                    type="tel" 
-                    name="mobileNumber" 
-                    value={formData.mobileNumber} 
-                    onChange={handleChange} 
-                    placeholder="+1 (555) 000-0000"
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="input-group">
-                <label>Email or Mobile Number</label>
-                <input 
-                  type="text" 
-                  name="identifier" 
-                  value={formData.identifier} 
-                  onChange={handleChange} 
-                  required 
-                  placeholder="Email or Mobile"
-                />
-              </div>
-            )}
+            </GoogleOAuthProvider>
+            <div className="auth-divider"><span>or</span></div>
+          </>
+        )}
 
+        {step === 'code' ? (
+          <form onSubmit={verifyCode} className="auth-form">
             <div className="input-group">
-              <label>Password</label>
-              <input 
-                type="password" 
-                name="password" 
-                value={formData.password} 
-                onChange={handleChange} 
-                required 
-                placeholder="••••••••"
+              <label htmlFor="otp">Verification code</label>
+              <input
+                id="otp"
+                name="otp"
+                className="otp-input"
+                value={form.otp}
+                onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="------"
+                autoFocus
+                required
               />
             </div>
 
-            <button type="submit" className="btn btn-primary auth-submit">
-              {isLogin ? 'Sign In' : 'Register'}
+            {view === 'signin' && codeInfo?.newUser && (
+              <div className="input-group">
+                <label htmlFor="name">Your name</label>
+                <input id="name" name="name" value={form.name} onChange={setField} maxLength={80} autoComplete="name" placeholder="So we know what to call you" required />
+              </div>
+            )}
+
+            {view === 'reset' && (
+              <div className="input-group">
+                <label htmlFor="newPassword">New password</label>
+                <input id="newPassword" name="newPassword" type="password" value={form.newPassword} onChange={setField} minLength={8} maxLength={72} autoComplete="new-password" placeholder="At least 8 characters" required />
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
+              {busy ? 'Please wait...' : view === 'register' ? 'Create account' : view === 'reset' ? 'Set password and sign in' : 'Verify and sign in'}
+            </button>
+
+            <div className="auth-links">
+              <button type="button" className="switch-btn" onClick={resendCode} disabled={resendIn > 0 || busy}>
+                {resendIn > 0 ? `Resend code in ${resendIn}s` : 'Resend code'}
+              </button>
+              <button type="button" className="switch-btn" onClick={() => { setStep('form'); setError(''); }}>
+                Change {view === 'register' ? 'email' : 'email/number'}
+              </button>
+            </div>
+          </form>
+        ) : view === 'signin' ? (
+          <>
+            <div className="method-toggle" role="radiogroup" aria-label="Sign-in method">
+              <button type="button" role="radio" aria-checked={method === 'password'} className={method === 'password' ? 'active' : ''} onClick={() => { setMethod('password'); setError(''); }}>
+                Password
+              </button>
+              <button type="button" role="radio" aria-checked={method === 'otp'} className={method === 'otp' ? 'active' : ''} onClick={() => { setMethod('otp'); setError(''); }}>
+                One-time code
+              </button>
+            </div>
+
+            <form onSubmit={method === 'password' ? passwordLogin : startOtpLogin} className="auth-form">
+              <div className="input-group">
+                <label htmlFor="identifier">Email or mobile number</label>
+                <input id="identifier" name="identifier" value={form.identifier} onChange={setField} autoComplete="username" placeholder="you@example.com or 98765 43210" required />
+              </div>
+
+              {method === 'password' ? (
+                <div className="input-group">
+                  <div className="label-row">
+                    <label htmlFor="password">Password</label>
+                    <button type="button" className="switch-btn small" onClick={() => switchView('reset')}>Forgot password?</button>
+                  </div>
+                  <input id="password" name="password" type="password" value={form.password} onChange={setField} autoComplete="current-password" required />
+                </div>
+              ) : (
+                <p className="auth-hint">
+                  We will send a 6-digit code to your {options?.smsOtp === false ? 'email' : 'email or phone'}. New here? Your account is created automatically.
+                </p>
+              )}
+
+              <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
+                {busy ? 'Please wait...' : method === 'password' ? 'Sign in' : 'Send code'}
+              </button>
+            </form>
+          </>
+        ) : view === 'register' ? (
+          <form onSubmit={startRegister} className="auth-form">
+            <div className="input-group">
+              <label htmlFor="name">Full name</label>
+              <input id="name" name="name" value={form.name} onChange={setField} maxLength={80} autoComplete="name" required />
+            </div>
+            <div className="input-group">
+              <label htmlFor="email">Email</label>
+              <input id="email" name="email" type="email" value={form.email} onChange={setField} autoComplete="email" required />
+            </div>
+            <div className="input-group">
+              <label htmlFor="password">Password</label>
+              <input id="password" name="password" type="password" value={form.password} onChange={setField} minLength={8} maxLength={72} autoComplete="new-password" placeholder="At least 8 characters" required />
+            </div>
+            <p className="auth-hint">We will email you a code to confirm the address. Prefer your phone? Use Sign in with a one-time code.</p>
+            <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
+              {busy ? 'Please wait...' : 'Continue'}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleOtpSubmit} className="auth-form">
+          <form onSubmit={startReset} className="auth-form">
             <div className="input-group">
-              <label>Verification Code</label>
-              <input 
-                type="text" 
-                name="otp" 
-                value={formData.otp} 
-                onChange={handleChange} 
-                required 
-                placeholder="123456"
-                maxLength="6"
-                style={{ textAlign: 'center', letterSpacing: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}
-              />
+              <label htmlFor="identifier">Email or mobile number</label>
+              <input id="identifier" name="identifier" value={form.identifier} onChange={setField} autoComplete="username" required />
             </div>
-            
-            <button type="submit" className="btn btn-primary auth-submit">
-              Verify & Login
+            <button type="submit" className="btn btn-primary auth-submit" disabled={busy}>
+              {busy ? 'Please wait...' : 'Send code'}
             </button>
-            <div className="auth-switch">
-              <p>
-                <button type="button" onClick={() => setStep('credentials')} className="switch-btn">
-                  Back to login
-                </button>
-              </p>
+            <div className="auth-links">
+              <button type="button" className="switch-btn" onClick={() => switchView('signin')}>Back to sign in</button>
             </div>
           </form>
-        )}
-
-        {step === 'credentials' && (
-          <div className="auth-switch">
-            <p>
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button onClick={() => { setIsLogin(!isLogin); setError(''); }} className="switch-btn">
-                {isLogin ? 'Register here' : 'Login here'}
-              </button>
-            </p>
-          </div>
         )}
       </div>
     </div>

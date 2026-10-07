@@ -35,3 +35,24 @@
     color: var(--accent-primary);
   }
 }
+
+.nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.mobile-nav .cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 100px;
+  background: #ff3f6c;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
