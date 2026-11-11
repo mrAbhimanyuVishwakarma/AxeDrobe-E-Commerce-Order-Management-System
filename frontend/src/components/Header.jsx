@@ -44,11 +44,18 @@ const Header = () => {
 
   return (
     <header className="header">
+      <div className="announcement-bar"><strong>Fresh drop</strong><span>Explore new-season styles across every category</span></div>
       <div className="header-top">
         <div className="container header-top-content">
           <div className="logo-container">
             <Link to="/" className="logo">{BRAND_NAME.toUpperCase()}</Link>
           </div>
+
+          <nav className="nav-links desktop-nav" aria-label="Categories">
+            {NAV_LINKS.slice(0, 6).map((link) => (
+              <Link key={link.to} to={link.to} className="nav-link" onClick={closeMenu}>{link.label}</Link>
+            ))}
+          </nav>
 
           <form className="search-bar" onSubmit={handleSearch} role="search">
             <Search size={18} className="search-icon" aria-hidden="true" />
@@ -96,18 +103,6 @@ const Header = () => {
               {count > 0 && <span className="cart-badge">{count > 99 ? '99+' : count}</span>}
             </Link>
           </div>
-        </div>
-      </div>
-
-      <div className="header-bottom">
-        <div className="container">
-          <nav className="nav-links" aria-label="Categories">
-            {NAV_LINKS.map((link) => (
-              <Link key={link.to} to={link.to} className="nav-link" onClick={closeMenu}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </div>
 
