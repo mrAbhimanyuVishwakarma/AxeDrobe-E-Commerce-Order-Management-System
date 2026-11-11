@@ -7,6 +7,7 @@ import { errorMessage, orderApi } from '../lib/api';
 import { fetchCatalog } from '../lib/catalog';
 import { formatDate, formatPrice, sizedImage } from '../lib/format';
 import { STATUS_LABELS, canCancel, estimatedDelivery } from '../lib/orders';
+import ReviewForm from '../components/ReviewForm';
 import './Orders.css';
 
 const Orders = () => {
@@ -127,6 +128,7 @@ const Orders = () => {
                       <span className="order-item-meta">
                         {item.size ? `Size ${item.size} · ` : ''}Qty {item.quantity} · {formatPrice(item.unitPrice)}
                       </span>
+                      {order.status === 'DELIVERED' && <ReviewForm orderId={order.id} productId={item.productId} />}
                     </div>
                   </li>
                 ))}

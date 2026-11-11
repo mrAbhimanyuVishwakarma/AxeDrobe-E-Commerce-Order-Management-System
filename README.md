@@ -22,6 +22,7 @@ A full-stack fashion store built as a set of Spring Boot microservices with a Re
 - Bag with quantity controls, free delivery threshold and price breakdown
 - Checkout with a delivery address and Cash on Delivery
 - Order history, order tracking timeline and self-service cancellation
+- Verified-purchase product reviews after delivery
 - Light and dark themes, responsive layout with a mobile bottom bar
 
 **Accounts**
@@ -195,6 +196,8 @@ Frontend variables (Vite, set at build time): `VITE_USER_SERVICE_URL`, `VITE_PRO
 | POST | `/api/orders/{id}/cancel` | signed in (own orders) |
 | PATCH | `/api/orders/{id}/status` | admin |
 | GET | `/api/orders/admin/latest` | admin |
+| GET | `/api/reviews/latest` | public |
+| POST | `/api/reviews` | signed in, delivered purchase required |
 
 Errors always come back as `{"status": 400, "message": "..."}`. A Postman collection is in `docs/`.
 

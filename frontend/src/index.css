@@ -83,8 +83,8 @@ body {
 }
 
 main {
-  padding-top: 130px; /* Accounts for the fixed header */
-  min-height: calc(100vh - 130px);
+  padding-top: 104px;
+  min-height: calc(100vh - 104px);
 }
 
 a {

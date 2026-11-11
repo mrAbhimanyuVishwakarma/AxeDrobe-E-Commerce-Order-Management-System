@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { BadgeCheck, RotateCcw, Truck } from 'lucide-react';
 import { BRAND_NAME, FREE_SHIPPING_FROM } from '../config';
 import { formatPrice } from '../lib/format';
 import './Footer.css';
@@ -38,15 +39,15 @@ const Footer = () => {
 
         <div className="footer-trust-section">
           <div className="trust-item">
-            <div className="trust-icon" aria-hidden="true">💯</div>
+            <div className="trust-icon" aria-hidden="true"><BadgeCheck /></div>
             <p><strong>100% ORIGINAL</strong> guarantee for every product on {BRAND_NAME}</p>
           </div>
           <div className="trust-item">
-            <div className="trust-icon" aria-hidden="true">🚚</div>
+            <div className="trust-icon" aria-hidden="true"><Truck /></div>
             <p><strong>Free delivery</strong> on orders above {formatPrice(FREE_SHIPPING_FROM)}</p>
           </div>
           <div className="trust-item">
-            <div className="trust-icon" aria-hidden="true">🔄</div>
+            <div className="trust-icon" aria-hidden="true"><RotateCcw /></div>
             <p><strong>Return within 14 days</strong> of receiving your order</p>
           </div>
         </div>
